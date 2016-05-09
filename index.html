@@ -1,0 +1,215 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+	<title>Document</title>
+	<script src="jquery.js"></script>
+	<script>
+   $(function(){
+   	  var id=0;
+    function get(type){
+        type=type||"id";
+   	  $.ajax({
+   	  	url:"select.php",
+   	  	data:"order="+type,
+   	  	dataType:"json",
+   	  	success:function(aa){
+           $(aa).each(function(index,data){
+           	id++;
+       var str="<tr><td class='id'>"+data.id+"</td><td data-role='name'>"+data.name+"</td><td data-role='sex'>"+data.sex+"</td><td data-role='age' class='age'>"+data.age+"</td><td class='del'>删除</td></tr>";
+          $("tbody").append(str);              
+           })
+   	  	}
+   	  })
+      }
+      get()
+   	  //添加一行 
+   	  $(".add").click(function(e){
+   	  	id++;
+       var str="<tr><td class='id'>"+id+"</td><td data-role='name'></td><td data-role='sex'></td><td data-role='age' class='age'></td><td class='del'>删除</td></tr>";
+       $('tbody').append(str);
+       $.ajax({
+       	  url:"insert.php",
+       	  data:"num="+id,
+       	  success:function(){
+       	  	alert("添加成功")
+       	  }
+       })
+   	  })
+   	  $(".add").mousedown(function(e){
+         e.preventDefault()
+   	  })
+      //删除一行
+      $("table").on("click",".del",function(){
+      	  $(this).parent().remove()
+      	  var nowid=$(this).prevAll(".id").html();
+      	  $.ajax({
+      	  	url:"delete.php",
+      	  	data:"num="+nowid,
+      	  	success:function(){
+      	  		alert("删除成功")
+      	  	}
+      	  })
+      })
+      //修改
+      $("table").on("dblclick","td:not('.id')",function(){
+      	  var oldval=$(this).text();
+      	  $(this).html("<input type=text value="+oldval+">");
+      	  $(this).find("input").focus().blur(change).keydown(change)
+          function change(e){
+          	 var that=this;
+             if(e.type=="blur"){
+               changing()
+             }else{
+             	if(e.keyCode==13){
+               changing()
+             	}
+             }
+             function changing(){
+                var newval=$(that).val();
+                if(newval!=oldval){
+                var attr=$(that).parent().attr('data-role');
+                var id=$(that).parent().prevAll(".id").html();
+                $(that).parent().html(newval);
+                $.ajax({
+                	url:"updata.php",
+                	data:{key:attr,value:newval,pos:id},
+                	success:function(){
+                		alert("修改成功")
+                	}
+                })
+                }
+             }  
+      	  }
+      })
+    //排序函数 
+      function order(by,type){
+         type=type||"ASC";
+         var arr=$("tbody>tr").toArray().sort(function(a,b){
+         if(type=="DESC")
+        return  $(a).find("."+by).text()<$(b).find("."+by).text()
+         else
+        return  $(a).find("."+by).text()>$(b).find("."+by).text() 
+         })
+         $("tbody").html(arr);
+        }
+    //排序依照
+      $(".order").click(function(){
+          $(this).toggleClass("active");
+          $("th").toggleClass("hid");
+           if($(this).is(".active")){
+               order("age","DESC")
+           }else{
+               order("id")
+           }
+      }).mousedown(function(e){
+        e.preventDefault()
+      })
+     //排序方式
+       $("th:has(span)").click(function(){
+           $(this).toggleClass("active")
+           var data=$(this).attr("data");
+           if($(this).is(".active")){
+              order(data,"DESC")
+           }else{
+              order(data)
+           }
+       }).mousedown(function(e){
+        e.preventDefault()
+      })
+   })
+	</script>
+</head>
+<style>
+	  table{
+		 border:1px solid #ccc;
+	  }
+    tr{
+    	height:30px;
+    }
+    td,th{
+    	width:100px;border-right:1px solid #ccc;
+    	border-bottom: 1px solid #ccc;text-align: center;
+    }
+    th{
+    	background:#83F50F;color:red;
+    }
+    td{
+    	color:#333;
+    }
+    td input{
+    	border:0;padding:0;width:100px;
+    	font-size: 16px;color:#333;
+    	height:30px;
+    	background:orange;
+    	margin:0;
+    }
+    th:last-of-type,td:last-of-type{
+      border-right:0;	 
+    }
+    .add{
+    	text-align: center;
+    	font-size: 20px;
+    	cursor:pointer;
+    	border:0;
+    }
+    .del{
+    	text-align: center;
+    	cursor: pointer;
+    	color:red;
+    }
+    .order{
+      color:blue;width:504px;margin:0 auto;
+      cursor:pointer;text-decoration: underline;
+      background:orange;	
+    }
+    th span{
+    	text-decoration: underline;cursor:pointer;
+    }
+    .order .nianling{
+      display:none;
+    }
+    .active .nianling{
+      display:inline;
+    }
+    .active .bianhao{
+      display: none;
+    }
+    .hid span.asc,.hid span.desc{
+      display: none;
+    }
+     th .desc{
+      display: none;
+     } 
+     .active>.asc{
+      display: none;
+     } 
+     .active>.desc{
+      display:inline;
+     }
+</style>
+<body>
+	<div class="order">
+		<span class="bianhao">按编号排序(点击切换)</span>
+    <span class="nianling">按年龄排序(点击切换)</span>
+	</div>
+	<table align="center" cellspacing="0" cellpadding="0">
+		<thead>
+		<tr>
+			<th data="id">编号<span class='asc'>(升序)</span><span class="desc">(降序)</span></th>
+			<th>姓名</th>
+			<th>性别</th>
+			<th class="hid" data="age">年龄<span class='asc'>(升序)</span><span class="desc">(降序)</span></th>
+			<th>操作</th>
+		</tr>
+        </thead>
+        <tbody>
+        </tbody>
+		<tfoot>
+		<tr>
+			<td colspan="5" class="add">+</td>
+		</tr>
+	    </tfoot>
+	</table>
+</body>
+</html>
